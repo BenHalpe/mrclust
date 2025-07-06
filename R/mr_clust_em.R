@@ -120,14 +120,12 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
   # initial parameter values
 
   m <- length(theta)
-  # AM: if removed as always true due to hard-coded options
   cluster_sizes <- 0:m
   if (is.null(obs_names)) {
     obs_names <- paste0("snp_", 1:m)
   }
 
-  num_clust <- length(cluster_sizes)
-  # AM: if removed as always true due to hard-coded options
+  num_clust <- length(cluster_sizes) # initialized to have a cluster for each variant
   num_clust <- num_clust * rand_num
 
   bic_clust <- bic_clust_mx <- vector()
@@ -142,7 +140,7 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
     for (itr in 1:(rand_num + 1)) {
       if (is.null(init_clust_means) | is.null(init_clust_probs)) {
         if (i > 0 & i != m) {
-          init_conds <- stats::kmeans(x = theta, centers = i, iter.max = 5e3)
+          init_conds <- stats::kmeans(x = theta, centers = i, iter.max = 5e3) #as in section 3.2.1, the initial centers/proportions are calculated using k-means.
           clust_means <- as.numeric(init_conds$centers)
           clust_probs <- table(init_conds$cluster) / m
           init_conds
