@@ -120,13 +120,13 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
   # initial parameter values
 
   m <- length(theta)
-  cluster_sizes <- 0:m
+  cluster_sizes <- 0:m # MISLEADING NAME! this is an array of the possible numbers of substansive clusters. 
   if (is.null(obs_names)) {
     obs_names <- paste0("snp_", 1:m)
   }
 
-  num_clust <- length(cluster_sizes) # initialized to have a cluster for each variant
-  num_clust <- num_clust * rand_num
+  num_clust <- length(cluster_sizes)
+  num_clust <- num_clust * rand_num # rand_num is the number of repeats the algorithm will have in order to avoid local optima
 
   bic_clust <- bic_clust_mx <- vector()
   clust_mn <- vector("list", num_clust)
@@ -136,7 +136,7 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
 
   count0 <- count_k <- 1
 
-  for (i in cluster_sizes) {
+  for (i in cluster_sizes) { # for each selection of number of clusters - this is for the BIC selection in 
     for (itr in 1:(rand_num + 1)) {
       if (is.null(init_clust_means) | is.null(init_clust_probs)) {
         if (i > 0 & i != m) {
