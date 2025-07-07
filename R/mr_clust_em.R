@@ -128,7 +128,7 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
   num_clust <- length(cluster_sizes)
   num_clust <- num_clust * rand_num # rand_num is the number of repeats the algorithm will have in order to avoid local optima
 
-  bic_clust <- bic_clust_mx <- vector()
+  bic_clust <- bic_clust_mx <- vector()#both initialized here. bic_clust stores all bics, bic_clust_mx stores the best bic across random initialization for each number of clusters.
   clust_mn <- vector("list", num_clust)
   clust_pi <- vector("list", num_clust)
   log_like <- vector("list", num_clust)
@@ -136,17 +136,19 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
 
   count0 <- count_k <- 1
 
-  for (i in cluster_sizes) { # for each selection of number of clusters - this is for the BIC selection in 
-    for (itr in 1:(rand_num + 1)) {
+  for (i in cluster_sizes) { # for each selection of number of clusters - this is for the BIC selection
+    for (itr in 1:(rand_num + 1)) { #for each random initalization of the k means algorithm
       if (is.null(init_clust_means) | is.null(init_clust_probs)) {
-        if (i > 0 & i != m) {
+        if (i > 0 & i != m) { #substantive clusters
           init_conds <- stats::kmeans(x = theta, centers = i, iter.max = 5e3) #as in section 3.2.1, the initial centers/proportions are calculated using k-means.
           clust_means <- as.numeric(init_conds$centers)
-          clust_probs <- table(init_conds$cluster) / m
+          # init_conds$clusters is the assingment of cluster per variant. table counts the number of appearances of each cluster. dividing by the number of cluster gives us the proprtion pi of each cluster
+          clust_probs <- table(init_conds$cluster) / m 
+          # printing for debugging, like in matlab
           init_conds
           clust_means
           clust_probs
-        } else if (i == m) {
+        } else if (i == m) { # if the number of clusters is the number of variants, set each cluster to include only the variant and uniform proportion
           clust_means <- theta
           clust_probs <- rep(1, m) / m
         } else if (i == 0) {
