@@ -151,17 +151,18 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
         } else if (i == m) { # if the number of clusters is the number of variants, set each cluster to include only the variant and uniform proportion
           clust_means <- theta
           clust_probs <- rep(1, m) / m
-        } else if (i == 0) {
+        } else if (i == 0) { 
           clust_means <- clust_probs <- NULL
         }
       }
 
       # junk distribution parameters
 
-      if (junk_mixture & is.null(junk_sd)) {
-        rng_thet <- range(theta)
-        max_disp <- which.max(abs(theta) + 2 * theta_se)
-        sig <- (rng_thet[2] - rng_thet[1] + theta_se[max_disp])
+      if (junk_mixture & is.null(junk_sd)) { #computes the standard deviation of the junk cluster if not directly given by user
+        # we want a width that will allow us to capture distant points
+        rng_thet <- range(theta) # [min(theta), max(theta)]
+        max_disp <- which.max(abs(theta) + 2 * theta_se) # this finds the variant which maximizes how far it is from the center
+        sig <- (rng_thet[2] - rng_thet[1] + theta_se[max_disp]) # this is the computed std, it is the range of all thetas with the added safety distance of the max dispersion
       } else if (junk_mixture & !is.null(junk_sd)) {
         sig <- junk_sd
       } else {
@@ -175,6 +176,8 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
         mu <- NULL
       }
       # null distribution parameters
+      # abs(theta / theta_se) is the z score for the null, which measures by how many standard deviation each theta deviates from the mean - the mean in the null cluster is 0 so we just use theta
+      # this returns the indices of variants that are marked to belong to the null cluster, since they are statistically close to 0 with high confidence. 
       null_obs <- abs(theta / theta_se) < 1.96
       if (null_mixture & is.null(null_sd)) {
         sig_null <- theta_se
@@ -191,6 +194,9 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
         if (junk_mixture | null_mixture) {
           ### junk_mixture parameters
           sum_pr <- 0
+          # next line finds how many variants are junk, by measuring how many are statistically extremely far from the median value.
+          # pnorm(y,params) is how likely a sampling of a gaussian with params is to return something smaller than y
+          # so we are counting variants where it is less than 5% to be further from the others than
           junk_obs <- sum(2 * (1 - stats::pnorm(theta - stats::median(theta),
                                                 0, theta_se)) < 0.05)
           if (junk_mixture & !fix_junk_prob) {
