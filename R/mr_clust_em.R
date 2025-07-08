@@ -376,7 +376,7 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
     bic_clust_mx[count_k] <- max(bic_clust[(count0 -
                                               (rand_num + 2)):(count0 - 1)])
 
-    if ((count_k > stop_bic_iter) & (i >= min_clust_search)) {
+    if ((count_k > stop_bic_iter) & (i >= min_clust_search)) { # as in section 3.3, repeat the algorithm with growing number of clusters until the BIC criterion starts increasing with the number of clusters
       tmp_cond <- TRUE
       for (j in 1:stop_bic_iter) {
         tmp_cond <- (tmp_cond & (bic_clust_mx[count_k - j + 1] >
