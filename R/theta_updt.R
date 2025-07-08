@@ -1,8 +1,8 @@
 theta_updt <- function(j, m, theta, theta_sd, theta_clust, pi_clust,
                        junk_mixture, df, mu, sig, null_mixture, mu_null,
                        sig_null) {
-  tmp <- rij(1:m, j, pi_clust, theta, theta_sd, theta_clust, junk_mixture, df,
-             mu, sig, null_mixture, mu_null, sig_null) / theta_sd[1:m]^2
+  tmp <- rij(1:m, j, pi_clust, theta, theta_sd, theta_clust, junk_mixture, df,  # as in section 3.2.2, calculate the responsibility of each cluster for each variant (r_ijk)
+             mu, sig, null_mixture, mu_null, sig_null) / theta_sd[1:m]^2        # as in section 3.2.3, calculation of next theta
   den <- if (length(j) > 1) {
     colSums(tmp)
   } else {
