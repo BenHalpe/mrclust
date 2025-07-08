@@ -128,7 +128,7 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
   num_clust <- length(cluster_sizes)
   num_clust <- num_clust * rand_num # rand_num is the number of repeats the algorithm will have in order to avoid local optima
 
-  bic_clust <- bic_clust_mx <- vector()#both initialized here. bic_clust stores all bics, bic_clust_mx stores the best bic across random initialization for each number of clusters.
+  bic_clust <- bic_clust_mx <- vector() # both initialized here. bic_clust stores all bics, bic_clust_mx stores the best bic across random initialization for each number of clusters.
   clust_mn <- vector("list", num_clust)
   clust_pi <- vector("list", num_clust)
   log_like <- vector("list", num_clust)
