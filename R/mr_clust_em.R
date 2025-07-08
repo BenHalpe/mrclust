@@ -138,11 +138,11 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
 
   for (i in cluster_sizes) { # for each selection of number of clusters - this is for the BIC selection
     for (itr in 1:(rand_num + 1)) { #for each random initalization of the k means algorithm
-      if (is.null(init_clust_means) | is.null(init_clust_probs)) {
+      if (is.null(init_clust_means) | is.null(init_s)) {
         if (i > 0 & i != m) { #substantive clusters
           init_conds <- stats::kmeans(x = theta, centers = i, iter.max = 5e3) #as in section 3.2.1, the initial centers/proportions are calculated using k-means.
           clust_means <- as.numeric(init_conds$centers)
-          # init_conds$clusters is the assingment of cluster per variant. table counts the number of appearances of each cluster. dividing by the number of cluster gives us the proprtion pi of each cluster
+          # init_conds$clusters is the assignment of cluster per variant. table counts the number of appearances of each cluster. dividing by the number of cluster gives us the proprtion pi of each cluster
           clust_probs <- table(init_conds$cluster) / m 
           # printing for debugging, like in matlab
           init_conds
@@ -199,15 +199,16 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
           # so we are counting variants where it is less than 5% to be further from the others than
           junk_obs <- sum(2 * (1 - stats::pnorm(theta - stats::median(theta),
                                                 0, theta_se)) < 0.05)
+          # jk_pr is the proprtion of the junk cluster
           if (junk_mixture & !fix_junk_prob) {
             if (sum(junk_obs) == 0) {
-              jk_pr <- 1 / m
-              sum_pr <- jk_pr
+              jk_pr <- 1 / m  # if no extreme outliers were observed, the proprtion of the junk cluster is uniform
+              sum_pr <- jk_pr 
             } else {
-              jk_pr <- sum(junk_obs) / m
+              jk_pr <- sum(junk_obs) / m # if there are outliers they make up the proprtion of the junk cluster as done with the substantive clusters
               sum_pr <- jk_pr
             }
-          } else if (junk_mixture & fix_junk_prob) {
+          } else if (junk_mixture & fix_junk_prob) { # fix as in use user defined value instead of calculating
             jk_pr <- junk_prob
             sum_pr <- jk_pr
           } else {
@@ -225,9 +226,10 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
               null_pr <- 1 / m
               sum_pr <- sum_pr + null_pr
             } else {
-              null_pr <- sum(null_obs) / m
-              if (null_pr + tmp_jk_pr > (1 - 1 / m)) {
+              null_pr <- sum(null_obs) / m # see similar logic fot jk_pr above
+              if (null_pr + tmp_jk_pr > (1 - 1 / m)) { # in case the junk and null clusters are proportionally most of the clusters with substantive clusters being very small, fix them to avoid the algorithm treating everything like noise
                 tmp_sum <- null_pr + tmp_jk_pr
+                # reassign the null and junk proportions by normalizing them with respect to each other and taking extra safety margin of 1/m over all non substantive clusters
                 if (is.null(jk_pr)) {
                   null_pr <- null_pr / tmp_sum - 1 / m
                 } else {
@@ -245,9 +247,9 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
           } else {
             null_pr <- NULL
           }
-
+          # c() just concatenates, mu here is the junk mean
           clust_means <- c(clust_means, mu_null, mu)
-          clust_probs <- c(clust_probs * (1 - sum_pr), null_pr, jk_pr)
+          clust_probs <- c(clust_probs * (1 - sum_pr), null_pr, jk_pr) # rescale the substantive cluster proprtions to account for null and junk clusters
           k_clust <- cluster_sizes[count_k] + sum(junk_mixture) +
             sum(null_mixture)
         } else {
@@ -274,11 +276,11 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
         clust_means <- c(clust_means, mu_null, mu)
         clust_probs <- c(clust_probs * (1 - sum_pr), null_pr, jk_pr)
         k_clust <- cluster_sizes[count_k] + sum(junk_mixture) +
-          sum(null_mixture)
+          sum(null_mixture) # each sum will be 1 if there are any variants in the junk/null cluster so will flag the existance of the cluster
       }
-      ####
+      #### Expectation Maximization step
 
-      if (scale_grid_search & junk_mixture) {
+      if (scale_grid_search & junk_mixture) { # runs the E-M step multiple times for multiple guesses at the junk cluster standard deviation in order to find the one that leads to the highest log likelihood
         sigs <- sig * seq(1, grid_max, by = grid_increment)
         pi_tmp <- vector("list", length(sigs))
         theta_tmp <- vector("list", length(sigs))
@@ -329,12 +331,12 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
         tmp_loglik <- loglik_tmp[mx]
         sig <- sigs[mx]
       } else {
-        pi_clust <- clust_probs # initialise cluster class probabilities
+        pi_clust <- clust_probs # initialise cluster class proportions
         theta_clust <- clust_means # initialise cluster centroids; these can be
         #the same as the std error is assumed to vary between the observations
         count <- 1 # start iteration count
         loglik_diff <- 1
-        loglik_iter <- NULL
+        loglik_iter <- NULL # records all log likelihoods calculated during the run
 
         while (loglik_diff > tol & count < max_iter) {
           tmp_loglik0 <- loglik(m, pi_clust, theta, theta_se, theta_clust,
@@ -427,7 +429,7 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
       log_likelihood = log_like, bic = bic_clust
     )
   }
-  if (trait_search) {
+  if (trait_search) { # for each cluster, check if its variant match specific biological traits that are less matched by variants outside the cluster. added for interpretability of results.
     trt_search <- pheno_search(variant_clusters = variant_clusters,
                                p_value = trait_pvalue, r2 = proxy_r2,
                                catalogue = catalogue, proxies = proxies,
