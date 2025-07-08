@@ -1,6 +1,6 @@
 pi_updt <- function(j, m, pi_clust, theta, theta_sd, theta_clust, junk_mixture,
                     df, mu, sig, junk_prob, fix_junk_prob, null_mixture,
-                    mu_null, sig_null, null_prob, fix_null_prob) {
+                    mu_null, sig_null, null_prob, fix_null_prob) {        # calculation of pi for the next time step as detailed in section 3.2.3
   tmp <- rij(1:m, j, pi_clust, theta, theta_sd, theta_clust, junk_mixture,
              df, mu, sig, null_mixture, mu_null, sig_null)
   num <- if (length(j) > 1) {
