@@ -138,7 +138,7 @@ mr_clust_em <- function(theta, theta_se, bx, by, bxse, byse,
 
   for (i in cluster_sizes) { # for each selection of number of clusters - this is for the BIC selection
     for (itr in 1:(rand_num + 1)) { #for each random initalization of the k means algorithm
-      if (is.null(init_clust_means) | is.null(init_s)) {
+      if (is.null(init_clust_means)) {
         if (i > 0 & i != m) { #substantive clusters
           init_conds <- stats::kmeans(x = theta, centers = i, iter.max = 5e3) #as in section 3.2.1, the initial centers/proportions are calculated using k-means.
           clust_means <- as.numeric(init_conds$centers)
